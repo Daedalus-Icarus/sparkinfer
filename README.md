@@ -39,9 +39,11 @@ csrc/
     └── moe_gemm/      # sync-free GroupGEMM baseline
 
 include/sparkinfer/kernels/
-├── attention.h        # flash decode launch API
-├── gemm.h             # GEMM / GEMV launch API
-└── moe.h              # GroupGEMM + SwiGLU launch API
+├── attention.h        # flash decode + prefill launch API
+├── gemm.h             # GEMM / batched GEMM launch API
+├── moe.h              # router GEMM, top-k router, SwiGLU expert FFN
+├── quant.h            # int8 / int4-block quantization
+└── fused.h            # RMSNorm (+ residual)
 ```
 
 ---
@@ -58,27 +60,45 @@ include/sparkinfer/kernels/
 
 `head_dim=512` has no public implementation in FlashInfer, vLLM, or llama.cpp as of 2026-06.
 
-### CuTe DSL — MoE
-| Kernel | Operations fused | Sync-free |
+### MoE (portable CUDA — production path)
+| Kernel | Does | Sync-free |
 |---|---|---|
-| `moe_swiglu/group_gemm_swiglu.cu` | GroupGEMM + SwiGLU epilogue | yes — token counts on GPU |
-| `moe_gemm/group_gemm.cu` | GroupGEMM | yes |
+| `moe/router_gemm.cu` | logits = X @ router_w (bf16→fp32) | — |
+| `moe/router.cu` | top-k selection + per-expert token counts | yes — counts on GPU |
+| `moe/expert_ffn.cu` | fused SwiGLU expert FFN, accumulated over top-k | yes |
 
 Sync-free design means token-per-expert counts live in GPU memory only. No CPU readback, no synchronization barrier mid-graph. Enables end-to-end CUDA graph capture across the full MoE forward pass — the primary latency win on RTX Spark.
+
+### CuTe DSL — MoE (experimental, `-DBUILD_CUTE_KERNELS=ON`)
+`csrc/cute/moe_swiglu` and `csrc/cute/moe_gemm` hold the CuTe DSL GroupGEMM+SwiGLU
+direction (TMA + tensor-core epilogue). They require CUTLASS and target the
+`sm_100a`/`sm_120a` tensor-core paths, and are **off by default** — the portable
+CUDA MoE kernels above are the production path that runs on RTX 5090 today.
 
 ---
 
 ## Build
 
 ```bash
-cmake -B build \
-  -DCMAKE_CUDA_ARCHITECTURES="100" \
-  -DBUILD_TESTS=ON \
-  -DBUILD_BENCHMARKS=ON
+cmake -B build -DCMAKE_CUDA_ARCHITECTURES="120" -DBUILD_TESTS=ON
 cmake --build build -j$(nproc)
+ctest --test-dir build --output-on-failure   # CPU algorithm correctness tests
 ```
 
-CUTLASS (and CuTe DSL) is fetched automatically via CMake FetchContent.
+Requires CUDA Toolkit 12.8+ (first release with `sm_120`/RTX 5090 support). The
+default build is pure CUDA — no external deps. CUTLASS is fetched only when
+`-DBUILD_CUTE_KERNELS=ON`.
+
+## Verification
+
+Every kernel is checked two ways:
+
+- **Targets RTX 5090** — each `.cu` compiles through NVRTC → `ptxas -arch=sm_120`
+  to a real cubin (`sm_120` = consumer Blackwell / RTX 5090, *not* `sm_100` =
+  datacenter B200).
+- **Computes the right thing** — `tests/cpu_reference_test.cpp` re-implements each
+  kernel's exact math and checks it against an independent double-precision
+  reference (attention, router top-k, SwiGLU FFN, GEMM, RMSNorm), all within ~1e-7.
 
 ---
 
