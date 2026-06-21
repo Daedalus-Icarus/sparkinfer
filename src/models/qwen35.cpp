@@ -42,6 +42,10 @@ struct Qwen35Model::Impl {
     uint64_t seq_id = 0;
     int qdim, kvdim;
     bool gguf = false;   // true after load_gguf: dense weights are native [out,in], use GEMV
+    // CUDA-graph capture of the decode compute (captured once, replayed each token)
+    cudaGraph_t cu_graph{};
+    cudaGraphExec_t cu_exec{};
+    bool graph_ready = false;
 
     // scratch (bf16)
     bf16 *x, *xn, *q, *k, *v, *attn, *ao, *h, *hn, *routed, *shared;
@@ -86,6 +90,7 @@ Qwen35Model::~Qwen35Model() {
     cudaFree(p_->d_seqlen); cudaFree(p_->d_writepos); cudaFree(p_->d_shared_ids); cudaFree(p_->d_shared_w);
     cudaFree(p_->mf_logits); cudaFree(p_->mf_weights); cudaFree(p_->mf_h); cudaFree(p_->mf_out);
     cudaFree(p_->mf_ids); cudaFree(p_->mf_counts);
+    if (p_->graph_ready) { cudaGraphExecDestroy(p_->cu_exec); cudaGraphDestroy(p_->cu_graph); }
     cudaStreamDestroy(p_->stream);
     delete p_;
 }
@@ -105,6 +110,18 @@ int Qwen35Model::forward_token(int token_id, int position) {
     cu(cudaMemcpyAsync(s.d_pos, &position, sizeof(int), cudaMemcpyHostToDevice, st), "pos");
     cu(cudaMemcpyAsync(s.d_writepos, &position, sizeof(int), cudaMemcpyHostToDevice, st), "wpos");
     cu(cudaMemcpyAsync(s.d_seqlen, &seqlen, sizeof(int), cudaMemcpyHostToDevice, st), "slen");
+
+    // Capture the decode compute into a CUDA graph on the first token, then
+    // replay it every token (per-token inputs live in the d_tok/pos/seqlen/
+    // writepos device buffers uploaded above, so replay produces fresh results).
+    if (s.graph_ready) {
+        cu(cudaGraphLaunch(s.cu_exec, st), "graph launch");
+        int out_id = 0;
+        cu(cudaMemcpyAsync(&out_id, s.d_out_id, sizeof(int), cudaMemcpyDeviceToHost, st), "out_id");
+        cu(cudaStreamSynchronize(st), "sync");
+        return out_id;
+    }
+    cu(cudaStreamBeginCapture(st, cudaStreamCaptureModeThreadLocal), "begin capture");
 
     kernels::launch_embedding(s.d_tok, s.w.embed_tokens, s.x, 1, H, st);
 
@@ -169,6 +186,11 @@ int Qwen35Model::forward_token(int token_id, int position) {
     if (s.gguf) kernels::launch_gemv_f32(s.xn, s.w.lm_head, s.logits, c.vocab, H, st);  // lm_head native [vocab,H]
     else        kernels::launch_linear_f32(s.xn, s.w.lm_head, s.logits, 1, c.vocab, H, st);
     kernels::launch_argmax(s.logits, s.d_out_id, 1, c.vocab, st);
+
+    cu(cudaStreamEndCapture(st, &s.cu_graph), "end capture");
+    cu(cudaGraphInstantiate(&s.cu_exec, s.cu_graph, 0), "graph instantiate");
+    s.graph_ready = true;
+    cu(cudaGraphLaunch(s.cu_exec, st), "graph launch (first)");
 
     int out_id = 0;
     cu(cudaMemcpyAsync(&out_id, s.d_out_id, sizeof(int), cudaMemcpyDeviceToHost, st), "out_id");
