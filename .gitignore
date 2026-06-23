@@ -7,5 +7,5 @@ __pycache__/
 *.swp
 .prebuilt/
 .llamacpp/
-models/
+/models/
 dist/
