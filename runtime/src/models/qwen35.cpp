@@ -311,6 +311,18 @@ bool Qwen35Model::load_gguf(const std::string& path) {
     GGUF g;
     if (!g.open(path)) return false;
 
+    // Shared-expert tensors are optional in GGUF (Qwen3-30B-A3B has none). The
+    // default config sets n_shared=1, so clamp it to what the file actually
+    // contains before forward_token can launch a null-weight FFN.
+    const bool gguf_has_shared =
+        g.tensor("blk.0.ffn_gate_shexp.weight") != nullptr;
+    if (c.n_shared > 0 && !gguf_has_shared) {
+        fprintf(stderr,
+                "[gguf] no shared-expert tensors; forcing n_shared=0 "
+                "(safe for models without a shared FFN)\n");
+        s.cfg.n_shared = 0;
+    }
+
     // upload raw quantized blocks, keep on device (for experts)
     auto dev_quant = [&](const std::string& name, int& qtype) -> const void* {
         const GGUFTensor* t = g.tensor(name);
@@ -375,6 +387,12 @@ bool Qwen35Model::load_gguf(const std::string& path) {
         w.gate_q = dev_quant(b + "ffn_gate_exps.weight", w.gate_qtype);   // kept quantized
         w.up_q   = dev_quant(b + "ffn_up_exps.weight",   w.up_qtype);
         w.down_q = dev_quant(b + "ffn_down_exps.weight", w.down_qtype);
+        if (s.cfg.n_shared > 0) {
+            w.shared_gate = dense(b + "ffn_gate_shexp.weight", true);
+            w.shared_up   = dense(b + "ffn_up_shexp.weight", true);
+            w.shared_down = dense(b + "ffn_down_shexp.weight", true);
+            if (!w.shared_gate || !w.shared_up || !w.shared_down) return false;
+        }
         if (!w.wq || !w.router_w || !w.gate_q || !w.up_q || !w.down_q) return false;
         if (i == 0 || i == c.n_layers - 1) fprintf(stderr, "[gguf] layer %d loaded\n", i);
     }
