@@ -40,13 +40,18 @@ must be clean (0 errors).
 
 ## How rewards work (SN74)
 
-You're paid for the **verified marginal speedup** your PR adds over the current best
-("frontier"), not your rank — so "copy the leader + ε" pays ≈ ε. Performance PRs
-(`kernels/`, `runtime/`, `moe/`) are scored by measured speedup and labeled
-**XL / L / M / S / XS** (by the eval loop, from the measured delta — not by hand);
-`bench/` and infra PRs are scored by code quality. Label weights are maturity-adaptive
-(they rebalance toward smaller gains as the runtime nears the hardware ceiling). See the
-[org reward model](https://github.com/gittensor-ai-lab) for the full design.
+**Speedup-only.** You're paid for the **verified marginal speedup** your PR adds over the
+current best ("frontier"), not your rank — so "copy the leader + ε" pays ≈ ε. The eval loop
+labels each PR **XL / L / M / S / XS** from the measured delta (or **BASELINE** for the first
+verified entry on a new model/target) — never by hand — and that tier is the payout. A speedup
+is scored the same wherever it lands (`kernels/`, `runtime/`, `moe/`); there is **no
+per-subsystem budget**. Tiers are maturity-adaptive (they rebalance toward smaller gains as the
+runtime nears the hardware ceiling). See the [org reward model](https://github.com/gittensor-ai-lab).
+
+**Non-speedup PRs are welcome — but score 0.** Bug fixes, refactors, tests, benchmarks, docs,
+and tooling are appreciated and we'll review and merge good ones, but SN74 emits only for
+verified speedups, so they earn no reward. (The eval/scoring harness is maintainer-owned — see
+*Maintainer-owned paths* below.)
 
 ## Maintainer-owned paths (eval, scoring & governance)
 

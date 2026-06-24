@@ -18,9 +18,10 @@ import argparse, datetime, json, os, re, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 
-# subsystem -> emission weight. The label area:<name> is assigned from a PR's changed file
-# paths (top-level dir) — purely deterministic, no AI.
-AREAS = {"kernels": 0.42, "runtime": 0.26, "moe": 0.21, "bench": 0.11}
+# Subsystem buckets for the deterministic area:<name> label (from a PR's top-level changed
+# dirs — no AI). Categorization/display only: SN74 scoring is speedup-only (the eval:* tier),
+# NOT a per-subsystem budget.
+AREAS = {"kernels", "runtime", "moe", "bench"}
 
 def gh(args):
     return subprocess.run(["gh"] + args, capture_output=True, text=True)
