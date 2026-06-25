@@ -158,6 +158,13 @@ def areas_for_pr(repo, num):
     files = json.loads(gh(["pr", "view", str(num), "-R", repo, "--json", "files"]).stdout or "{}").get("files", [])
     return {f["path"].split("/", 1)[0] for f in files} & set(AREAS)
 
+def pr_checkbox_tested(repo, num):
+    """True if the PR body has the template's 'Tested on RTX 5090' checkbox ticked
+    (a markdown '[x]' on a line mentioning 5090). Self-attested greenlight for eval."""
+    body = (json.loads(gh(["pr", "view", str(num), "-R", repo, "--json", "body"]).stdout or "{}")
+            .get("body") or "")
+    return any(re.search(r"\[\s*[xX]\s*\]", ln) and "5090" in ln for ln in body.splitlines())
+
 def _owner_repo(repo):
     parts = repo.split("/"); return parts[0], parts[1]
 
@@ -330,17 +337,22 @@ def main():
         if not args.dry_run: apply_area_labels(args.repo, num, areas)
         if oid in evaluated_commits(args.repo, num):
             print(f"PR #{num} @ {oid}: already evaluated — skip eval"); continue
-        # Gate 3 — maintainer greenlight: only evaluate PRs a maintainer marked `test-on-5090`.
-        # Un-greenlit PRs get `not-tested` and are skipped (no GPU). Adding the gate label later
-        # triggers evaluation on the next poll (and the bot clears `not-tested`).
+        # Gate 3 — greenlight: a PR is evaluated only if the contributor checked the
+        # "Tested on RTX 5090" box in the PR template, OR a maintainer added `test-on-5090`
+        # (manual override). A checked box auto-applies the label. Otherwise -> `not-tested`,
+        # skip (no GPU). Re-checking the box / adding the label triggers eval on the next poll.
         pr_labels = {l["name"] for l in pr.get("labels", [])}
-        if EVAL_GATE_LABEL not in pr_labels:
-            print(f"PR #{num}: not greenlit ({EVAL_GATE_LABEL} absent) — mark not-tested, skip eval")
+        greenlit = (EVAL_GATE_LABEL in pr_labels) or pr_checkbox_tested(args.repo, num)
+        if not greenlit:
+            print(f"PR #{num}: not greenlit (RTX-5090 box unchecked, no {EVAL_GATE_LABEL}) "
+                  f"— mark not-tested, skip eval")
             if not args.dry_run and NOT_TESTED_LABEL not in pr_labels:
                 add_label(args.repo, num, NOT_TESTED_LABEL)
             continue
-        if not args.dry_run and NOT_TESTED_LABEL in pr_labels:
-            remove_label(args.repo, num, NOT_TESTED_LABEL)   # greenlit now — clear the skip marker
+        print(f"PR #{num}: greenlit for RTX 5090 eval")
+        if not args.dry_run:
+            if EVAL_GATE_LABEL not in pr_labels: add_label(args.repo, num, EVAL_GATE_LABEL)
+            if NOT_TESTED_LABEL in pr_labels: remove_label(args.repo, num, NOT_TESTED_LABEL)
         pending.append((pr, num, branch, oid, ref, areas))
 
     if not args.dry_run and state_changed:

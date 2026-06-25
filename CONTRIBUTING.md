@@ -53,10 +53,11 @@ and tooling are appreciated and we'll review and merge good ones, but SN74 emits
 verified speedups, so they earn no reward. (The eval/scoring harness is maintainer-owned — see
 *Maintainer-owned paths* below.)
 
-**Evaluation is opt-in.** The RTX 5090 eval runs only after a maintainer reviews your PR and
-adds the **`test-on-5090`** label. Until then the bot marks the PR **`not-tested`** and does not
-evaluate it — so open a clear, focused PR and wait for the greenlight rather than expecting an
-automatic score. (This keeps GPU off unvetted/spam PRs; it is not a judgment of your change.)
+**Evaluation is opt-in — check the box.** The RTX 5090 eval runs only once the
+**`- [x] Tested on RTX 5090`** box in the PR template is ticked. When it is, the bot greenlights
+the PR (adds **`test-on-5090`**) and evaluates it on the next poll; until then it marks the PR
+**`not-tested`** and does not evaluate. So fill in the template and tick the box when your PR is
+ready to be measured. (A maintainer can also add the `test-on-5090` label manually.)
 
 ## Maintainer-owned paths (eval, scoring & governance)
 
