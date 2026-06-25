@@ -105,6 +105,17 @@ window.SPARKINFER = {
   ],
   "prs": [
     {
+      "num": 17,
+      "title": "kernels/quant: reject unsupported GGUF types instead of silently decoding as F32",
+      "areas": [
+        "kernels"
+      ],
+      "label": "REJECT",
+      "tps": 0,
+      "delta_pct": null,
+      "url": "https://github.com/gittensor-ai-lab/sparkinfer/pull/17"
+    },
+    {
       "num": 19,
       "title": "moe/engine: guard forward() against num_tokens exceeding scratch capacity",
       "areas": [
