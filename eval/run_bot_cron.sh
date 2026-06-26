@@ -19,8 +19,10 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_DIR" || exit 1
 git pull -q origin main 2>/dev/null || true     # keep the bot + evaluator current
 echo "[$(date -u +%FT%TZ)] sparkinfer PR bot run"
+# Defaults are fallbacks only: the bot reuses the pinned box (VAST_DEFAULT_INSTANCE in
+# pr_eval_bot.py) and re-reads the live frontier from dashboard/data.json each PR.
 python3 eval/pr_eval_bot.py \
-  --instance "${VAST_INSTANCE:-42134865}" \
-  --frontier "${FRONTIER:-164}" \
+  --instance "${VAST_INSTANCE:-42613343}" \
+  --frontier "${FRONTIER:-285}" \
   --ceiling  "${CEILING:-366}" \
   --repo     "${REPO:-gittensor-ai-lab/sparkinfer}"

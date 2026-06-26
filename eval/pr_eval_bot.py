@@ -117,16 +117,21 @@ PENALTY_DAYS = 5             # every copycat strike freezes the author's evals f
 PENALTY_LABEL = "penalty"    # applied to a penalized author's PRs instead of greenlighting them
 
 def author_penalty_until(author):
-    """If `author` has a copycat strike within PENALTY_DAYS, return the date the penalty lifts
-    (latest strike + PENALTY_DAYS), else None. Applies from the FIRST strike onward."""
+    """If `author` has an active copycat strike, return the date the penalty lifts, else None.
+    Each strike lifts at its date + its own `penalty_days` (default PENALTY_DAYS); a strike entry
+    may override `penalty_days` for leniency (e.g. a first-time contributor's first mistake). The
+    author is penalized until the latest lift date. Applies from the FIRST strike onward."""
     if not author: return None
-    dates = []
+    lifts = []
     for e in load_copycat_log():
         if str(e.get("author", "")).lower() == author.lower():
-            try: dates.append(datetime.date.fromisoformat(e["date"]))
+            try:
+                d = datetime.date.fromisoformat(e["date"])
+                days = int(e.get("penalty_days", PENALTY_DAYS))
+                lifts.append(d + datetime.timedelta(days=days))
             except Exception: pass
-    if not dates: return None
-    until = max(dates) + datetime.timedelta(days=PENALTY_DAYS)
+    if not lifts: return None
+    until = max(lifts)
     return until if datetime.date.today() <= until else None
 
 def pr_fingerprint(repo, num):
