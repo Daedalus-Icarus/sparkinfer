@@ -4,12 +4,12 @@ window.SPARKINFER = {
   "status": {
     "gpu": "RTX 5090 · sm_120 · CUDA 13",
     "model": "Qwen3-30B-A3B · Q4_K_M",
-    "frontier_tps": 333.75,
+    "frontier_tps": 339.59,
     "ref_name": "llama.cpp",
     "ref_tps": 365.73,
     "vram_gb": 21.4,
-    "token_match": 0.97,
-    "kl": 0.1507
+    "token_match": 0.95,
+    "kl": 0.1415
   },
   "passes_gpu": "RTX PRO 6000",
   "passes": [
@@ -583,6 +583,12 @@ window.SPARKINFER = {
       "tps": 333.75,
       "pr": 71,
       "date": "2026-06-27"
+    },
+    {
+      "name": "split-K MMVQ down — +8% Qwen",
+      "tps": 339.59,
+      "pr": 74,
+      "date": "2026-06-28"
     }
   ]
 };
