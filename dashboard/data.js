@@ -4,13 +4,13 @@ window.SPARKINFER = {
   "status": {
     "gpu": "RTX 5090 · sm_120 · CUDA 13",
     "model": "Qwen3-30B-A3B · Q4_K_M",
-    "frontier_tps": 469.13,
+    "frontier_tps": 484.79,
     "ref_name": "llama.cpp",
     "ref_tps": 365.85,
     "vram_gb": 21.4,
-    "token_match": 0.9753,
-    "kl": 0.0126,
-    "ref_note": "128-tok decode, same RTX 5090 (warm, interleaved head-to-head)"
+    "token_match": 0.9612,
+    "kl": 0.0175,
+    "ref_note": "128-tok decode, same RTX 5090 final main benchmark · seed 99162999bbd8efa5"
   },
   "passes_gpu": "RTX 5090",
   "passes": [
@@ -808,7 +808,7 @@ window.SPARKINFER = {
     },
     {
       "name": "fuse QK-norm+RoPE+KV-append ",
-      "tps": 469.13,
+      "tps": 484.79,
       "pr": 122,
       "date": "2026-07-02"
     }
