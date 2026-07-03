@@ -4,7 +4,7 @@ window.SPARKINFER = {
   "status": {
     "gpu": "RTX 5090 · sm_120 · CUDA 13",
     "model": "Qwen3-30B-A3B · Q4_K_M",
-    "frontier_tps": 481.24,
+    "frontier_tps": 487.1,
     "ref_name": "llama.cpp",
     "ref_tps": 365.85,
     "vram_gb": 21.4,
@@ -13,8 +13,10 @@ window.SPARKINFER = {
     "ref_note": "128-tok decode rerun on current main, same RTX 5090 · Q4_K_M GGUF",
     "longctx_16k_tps": 265.17,
     "longctx_2k_tps": 277.78,
-    "longctx_token_match": 0.9735,
-    "longctx_kl": 0.0075
+    "longctx_token_match": 0.9595,
+    "longctx_kl": 0.0162,
+    "longctx_512_tps": 460.96,
+    "longctx_4k_tps": 348.68
   },
   "context_baselines": [
     {
@@ -22,7 +24,7 @@ window.SPARKINFER = {
       "label": "128",
       "color": "#D14D72",
       "tokens": 128,
-      "sparkinfer_tps": 481.24,
+      "sparkinfer_tps": 487.1,
       "llamacpp_decode_tps": 365.85,
       "llamacpp_note": "128-token decode, no prefill context"
     },
@@ -31,7 +33,7 @@ window.SPARKINFER = {
       "label": "512",
       "color": "#7B5DFF",
       "tokens": 128,
-      "sparkinfer_tps": 405.27,
+      "sparkinfer_tps": 460.96,
       "llamacpp_decode_tps": 342.59,
       "llamacpp_note": "llama-batched-bench npp=512 ntg=128 npl=1"
     },
@@ -40,7 +42,7 @@ window.SPARKINFER = {
       "label": "4k",
       "color": "#0E8A16",
       "tokens": 128,
-      "sparkinfer_tps": 195.31,
+      "sparkinfer_tps": 348.68,
       "llamacpp_decode_tps": 292.99,
       "llamacpp_note": "llama-batched-bench npp=4096 ntg=128 npl=1"
     },
@@ -1011,6 +1013,13 @@ window.SPARKINFER = {
       "pr": 130,
       "ctx": 16384,
       "date": "2026-07-02"
+    },
+    {
+      "name": "Enable GQA split path at 32 ",
+      "tps": 348.68,
+      "pr": 136,
+      "ctx": 4096,
+      "date": "2026-07-03"
     }
   ],
   "longctx_release_baselines": {
