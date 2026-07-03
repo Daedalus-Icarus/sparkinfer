@@ -128,6 +128,47 @@ window.SPARKINFER = {
   ],
   "prs": [
     {
+      "num": 138,
+      "title": "perf(decode): use 128-split mid-context plateau",
+      "areas": [
+        "kernels",
+        "runtime"
+      ],
+      "label": "XL",
+      "tps": 392.94,
+      "delta_pct": 12.6,
+      "top1": 0.9898,
+      "kl": 0.0197,
+      "url": "https://github.com/gittensor-ai-lab/sparkinfer/pull/138",
+      "eval_mode": "longctx",
+      "score_context": 4096,
+      "best_context_label": "4k-context",
+      "context_gains_pct": {
+        "128-context": 1.33,
+        "512-context": 1.87,
+        "4k-context": 12.61,
+        "16k-context": 0.36
+      },
+      "regression_labels": [],
+      "ctx_128_tps": 494.63,
+      "ctx_512_tps": 470.43,
+      "ctx_4096_tps": 392.94,
+      "ctx_16384_tps": 264.05,
+      "guard_128_baseline": 488.16,
+      "guard_128_ratio": 1.0133,
+      "guard_128_pass": true,
+      "guard_512_baseline": 461.79,
+      "guard_512_ratio": 1.0187,
+      "guard_512_pass": true,
+      "guard_4k_baseline": 348.94,
+      "guard_4k_ratio": 1.1261,
+      "guard_4k_pass": true,
+      "guard_16k_baseline": 263.09,
+      "guard_16k_ratio": 1.0036,
+      "guard_16k_pass": true,
+      "proof_url": "https://gittensor-ai-lab.github.io/sparkinfer-log/?run=0138-5ca05b0"
+    },
+    {
       "num": 136,
       "title": "Enable GQA split path at 32 splits",
       "areas": [
@@ -848,17 +889,6 @@ window.SPARKINFER = {
       "tps": 186.29,
       "delta_pct": null,
       "url": "https://github.com/gittensor-ai-lab/sparkinfer/pull/19"
-    },
-    {
-      "num": 20,
-      "title": "fix(runtime): reject unsupported GGML types during GGUF load",
-      "areas": [
-        "runtime"
-      ],
-      "label": "none",
-      "tps": 186.35,
-      "delta_pct": null,
-      "url": "https://github.com/gittensor-ai-lab/sparkinfer/pull/20"
     }
   ],
   "landed": [
