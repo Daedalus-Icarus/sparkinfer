@@ -6,7 +6,7 @@
 
 **SPARKINFER** is a _Blackwell-native_ inference runtime built for **high-speed**, **power-optimized** **local AI** on **NVIDIA RTX 50xx**, **RTX PRO 6000**, **RTX Spark**, and **Jetson Thor**.
 
-_It is designed for the next generation of personal agents like **Openclaw**, local copilots, **robotics**, and edge AI systems where inference speed, memory efficiency, and power efficiency decide how usable local intelligence feels._
+_It is designed for the next generation of personal agents like **Openclaw**, local copilots, **robotics**, and edge AI systems where inference speed, memory efficiency, privacy, and power efficiency decide how usable local intelligence feels._
 
 **SPARKINFER** is continuously optimized through [**SN74 Gittensor** competition](https://gittensor.io/) and **proprietary Kernel Design Agents**, turning frontier CUDA improvements into faster, power-optimized local MoE/LLM decode on real Blackwell hardware. _([Live dashboard](https://gittensor-ai-lab.github.io/sparkinfer/dashboard/))_
 
